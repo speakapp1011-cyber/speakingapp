@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>英語フレーズ学習</title>
+<link rel="icon" href="data:," />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #F0F1F8;
+    --paper: #FFFFFF;
+    --ink: #232238;
+    --ink-soft: #6A6A85;
+    --line: #DCDCEA;
+    --accent: #4A3AB8;
+    --accent-soft: #ECE9FB;
+    --warn: #C97A2B;
+    --warn-soft: #FBEBD8;
+    --danger: #B84C3E;
+    --danger-soft: #FBE3DF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; }
+  .display { font-family: 'Bricolage Grotesque', sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 32px 20px 64px; }
+
+  .header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .logo { width: 48px; height: 48px; border-radius: 12px; background: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 22px; }
+  h1 { font-size: 25px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+  .sub { font-size: 12.5px; color: var(--ink-soft); margin: 2px 0 0; }
+
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 20px; }
+  .section-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; display: flex; align-items: center; gap: 6px; }
+  .section-hint { font-size: 12px; color: var(--ink-soft); margin: 0 0 14px; }
+
+  input, textarea {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line);
+    font-size: 13px; color: var(--ink); background: #FBFBFE; outline: none; font-family: inherit; resize: vertical;
+  }
+
+  .pill-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 999px;
+    font-size: 13px; color: #fff; border: none; background: var(--accent); cursor: pointer; font-weight: 600;
+  }
+  .pill-btn:hover { opacity: 0.92; }
+  .pill-btn.ghost { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+  .pill-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .spin { display: inline-block; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none !important; }
+
+  .pending-card {
+    border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; background: var(--accent-soft);
+  }
+  .pending-card.excluded { background: #F5F5F8; opacity: 0.6; }
+  .pending-row { display: flex; align-items: flex-start; gap: 8px; }
+  .pending-fields { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+  .pending-fields label { font-size: 10.5px; color: var(--ink-soft); display: block; margin-bottom: 2px; }
+  .field-full { grid-column: 1 / -1; }
+
+  .phrase-item {
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; background: var(--paper);
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+  }
+  .phrase-en { font-size: 14.5px; font-weight: 700; color: var(--accent); }
+  .phrase-meta { font-size: 12px; color: var(--ink); margin-top: 3px; }
+  .phrase-note { font-size: 11px; color: var(--ink-soft); margin-top: 3px; }
+  .phrase-date { font-size: 10px; color: var(--ink-soft); }
+  .del-btn { background: transparent; border: none; color: var(--ink-soft); cursor: pointer; font-size: 15px; flex-shrink: 0; }
+
+  .empty-msg { font-size: 12.5px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="logo">🗣️</div>
+    <div>
+      <h1 class="display">英語フレーズ学習</h1>
+      <p class="sub mono" id="phraseCount">登録済み 0 フレーズ</p>
+    </div>
+  </div>
+
+  <!-- 教材画像を登録 -->
+  <div class="card">
+    <div class="section-title">📷 教材画像を登録</div>
+    <p class="section-hint">英語教材のページを撮影・アップロードすると、AIが会話で使える重要フレーズを抽出します。</p>
+    <button class="pill-btn" onclick="document.getElementById('fileInput').click()">画像を選ぶ</button>
+    <input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden" />
+
+    <div id="photoPreviewWrap" class="hidden" style="margin-top:12px;">
+      <img id="photoPreview" style="max-width:220px; max-height:220px; border-radius:10px; border:1px solid var(--line); display:block; margin-bottom:10px;" />
+    </div>
+
+    <div id="extractLoading" class="hidden" style="display:flex; align-items:center; gap:8px; color:var(--ink-soft); font-size:13px; margin-top:8px;">
+      <span class="spin">⟳</span> フレーズを抽出しています…
+    </div>
+    <p id="extractError" class="hidden" style="color:var(--danger); font-size:12.5px; margin-top:8px;"></p>
+  </div>
+
+  <!-- 抽出結果の確認・編集 -->
+  <div class="card hidden" id="pendingCard">
+    <div class="section-title">✏️ 抽出結果を確認・編集</div>
+    <p class="section-hint">内容を修正したり、不要なフレーズはチェックを外してから保存してください。</p>
+    <div id="pendingList"></div>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button class="pill-btn" onclick="savePending()">選択したフレーズを保存</button>
+      <button class="pill-btn ghost" onclick="addBlankPending()">＋ フレーズを手動で追加</button>
+    </div>
+  </div>
+
+  <!-- 登録済みフレーズ一覧 -->
+  <div class="card">
+    <div class="section-title">📚 登録済みフレーズ</div>
+    <p class="section-hint">これまでに保存したフレーズです。</p>
+    <div id="phraseList"></div>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEY = "phrase-app-phrases";
+
+let phrases = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let pendingItems = null;
+let photoData = null; // { base64, mimeType }
+
+function uid() { return Math.random().toString(36).slice(2, 10); }
+function nowISO() { return new Date().toISOString(); }
+function todayLabel(iso) {
+  try { return new Date(iso).toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" }); }
+  catch { return ""; }
+}
+function normalize(s) { return (s || "").trim().toLowerCase(); }
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(phrases)); }
+
+// ---- image compression (keeps requests well under Vercel's body-size limit) ----
+function compressImage(file, maxDimension, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("ファイルを読み込めませんでした"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("画像の形式を認識できませんでした"));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          const scale = maxDimension / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve({ dataUrl, base64: dataUrl.split(",")[1], mimeType: "image/jpeg" });
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById("fileInput").addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const errEl = document.getElementById("extractError");
+  errEl.classList.add("hidden");
+  try {
+    const { dataUrl, base64, mimeType } = await compressImage(file, 1280, 0.82);
+    photoData = { base64, mimeType };
+    const img = document.getElementById("photoPreview");
+    img.src = dataUrl;
+    document.getElementById("photoPreviewWrap").classList.remove("hidden");
+    extractPhrases(); // start extraction immediately, no extra button press
+  } catch (err) {
+    errEl.textContent = "画像の読み込みに失敗しました: " + err.message;
+    errEl.classList.remove("hidden");
+  }
+});
+
+async function extractPhrases() {
+  if (!photoData) return;
+  const loadingEl = document.getElementById("extractLoading");
+  const errEl = document.getElementById("extractError");
+  errEl.classList.add("hidden");
+  loadingEl.classList.remove("hidden");
+  document.getElementById("pendingCard").classList.add("hidden");
+
+  try {
+    const res = await fetch("/api/extract-phrases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageBase64: photoData.base64, mimeType: photoData.mimeType }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error ? `${data.error}${data.detail ? "：" + data.detail : ""}` : `サーバーエラー（${res.status}）`);
+    }
+    if (!data.phrases || data.phrases.length === 0) {
+      throw new Error("フレーズを検出できませんでした");
+    }
+    pendingItems = data.phrases.map((p) => ({
+      id: uid(),
+      phrase: p.phrase || "",
+      meaning: p.meaning || "",
+      example: p.example || "",
+      nuance: p.nuance || "",
+      include: true,
+    }));
+    renderPending();
+  } catch (err) {
+    errEl.textContent = "抽出に失敗しました：" + err.message;
+    errEl.classList.remove("hidden");
+  } finally {
+    loadingEl.classList.add("hidden");
+  }
+}
+
+function renderPending() {
+  const card = document.getElementById("pendingCard");
+  card.classList.remove("hidden");
+  const list = document.getElementById("pendingList");
+  list.innerHTML = "";
+  (pendingItems || []).forEach((p) => {
+    const el = document.createElement("div");
+    el.className = "pending-card" + (p.include ? "" : " excluded");
+    el.innerHTML = `
+      <div class="pending-row">
+        <input type="checkbox" ${p.include ? "checked" : ""} onchange="updatePending('${p.id}','include',this.checked)" style="margin-top:4px;" />
+        <div class="pending-fields">
+          <div class="field-full">
+            <label>フレーズ（英語）</label>
+            <input value="${escapeHtml(p.phrase)}" onchange="updatePending('${p.id}','phrase',this.value)" />
+          </div>
+          <div>
+            <label>意味（日本語）</label>
+            <input value="${escapeHtml(p.meaning)}" onchange="updatePending('${p.id}','meaning',this.value)" />
+          </div>
+          <div>
+            <label>ニュアンス・使い方</label>
+            <input value="${escapeHtml(p.nuance)}" onchange="updatePending('${p.id}','nuance',this.value)" />
+          </div>
+          <div class="field-full">
+            <label>例文（英語）</label>
+            <input value="${escapeHtml(p.example)}" onchange="updatePending('${p.id}','example',this.value)" />
+          </div>
+        </div>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+}
+function updatePending(id, key, value) {
+  pendingItems = pendingItems.map((p) => (p.id === id ? { ...p, [key]: value } : p));
+  renderPending();
+}
+function addBlankPending() {
+  pendingItems = [...(pendingItems || []), { id: uid(), phrase: "", meaning: "", example: "", nuance: "", include: true }];
+  document.getElementById("pendingCard").classList.remove("hidden");
+  renderPending();
+}
+
+function savePending() {
+  const toSave = (pendingItems || []).filter((p) => p.include && p.phrase.trim());
+  if (toSave.length === 0) return;
+
+  const existingKeys = new Set(phrases.map((ph) => normalize(ph.phrase)));
+  let addedCount = 0;
+  let skippedCount = 0;
+
+  toSave.forEach((p) => {
+    const key = normalize(p.phrase);
+    if (existingKeys.has(key)) {
+      skippedCount++;
+      return;
+    }
+    existingKeys.add(key);
+    const now = nowISO();
+    phrases.push({
+      id: uid(),
+      phrase: p.phrase.trim(),
+      meaning: p.meaning.trim(),
+      example: p.example.trim(),
+      nuance: p.nuance.trim(),
+      first_studied_at: now,
+      created_at: now,
+      updated_at: now,
+    });
+    addedCount++;
+  });
+
+  save();
+  renderPhraseList();
+  pendingItems = null;
+  document.getElementById("pendingCard").classList.add("hidden");
+  document.getElementById("photoPreviewWrap").classList.add("hidden");
+  photoData = null;
+  document.getElementById("fileInput").value = "";
+
+  if (skippedCount > 0) {
+    const errEl = document.getElementById("extractError");
+    errEl.textContent = `${addedCount}件を保存しました（${skippedCount}件は既に登録済みのため重複をスキップしました）`;
+    errEl.style.color = "var(--ink-soft)";
+    errEl.classList.remove("hidden");
+  }
+}
+
+function deletePhrase(id) {
+  phrases = phrases.filter((p) => p.id !== id);
+  save();
+  renderPhraseList();
+}
+
+function renderPhraseList() {
+  document.getElementById("phraseCount").textContent = `登録済み ${phrases.length} フレーズ`;
+  const list = document.getElementById("phraseList");
+  if (phrases.length === 0) {
+    list.innerHTML = `<p class="empty-msg">まだフレーズが登録されていません。教材の画像を登録すると、ここに追加されていきます。</p>`;
+    return;
+  }
+  const sorted = [...phrases].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  list.innerHTML = sorted.map((p) => `
+    <div class="phrase-item">
+      <div>
+        <div class="phrase-en">${escapeHtml(p.phrase)}</div>
+        <div class="phrase-meta">${escapeHtml(p.meaning)}${p.example ? ` — <span class="mono">${escapeHtml(p.example)}</span>` : ""}</div>
+        ${p.nuance ? `<div class="phrase-note">${escapeHtml(p.nuance)}</div>` : ""}
+        <div class="phrase-date mono">${escapeHtml(todayLabel(p.first_studied_at))}</div>
+      </div>
+      <button class="del-btn" onclick="deletePhrase('${p.id}')">🗑</button>
+    </div>
+  `).join("");
+}
+
+// ---- init ----
+renderPhraseList();
+</script>
+</body>
+</html>
